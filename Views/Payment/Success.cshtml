@@ -1,0 +1,35 @@
+﻿@{
+    ViewData["Title"] = "Payment Successful";
+}
+
+<div class="text-center">
+    @if (ViewData["Paid"] as bool? == true)
+    {
+        <div class="alert alert-success">
+            <h1>Payment Successful! ✅</h1>
+            <p>Thank you for your purchase!</p>
+            @if (ViewData["Message"] != null)
+            {
+                <p>@ViewData["Message"]</p>
+            }
+        </div>
+
+        <div class="card">
+            <div class="card-body">
+                <h5 class="card-title">Payment Details</h5>
+                <p><strong>Session ID:</strong> @ViewData["SessionId"]</p>
+                <p><strong>Amount Paid:</strong> R@(ViewData["AmountTotal"]) @ViewData["Currency"]</p>
+                <p><strong>Status:</strong> Paid</p>
+            </div>
+        </div>
+
+        <a href="/" class="btn btn-primary mt-3">Return to Home</a>
+    }
+    else
+    {
+        <div class="alert alert-warning">
+            <h1>Payment Processing</h1>
+            <p>Your payment is being processed. Please check your email for confirmation.</p>
+        </div>
+    }
+</div>

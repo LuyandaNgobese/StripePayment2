@@ -1,11 +1,17 @@
 using Stripe;
 using Microsoft.AspNetCore.Http;
 using System.IO;
+using StripePayment2.Models;//add
+
 
 var builder = WebApplication.CreateBuilder(args);
 
 // Add services to the container
 builder.Services.AddControllersWithViews();
+
+// Configure Stripe
+builder.Services.Configure<StripeSettings>(builder.Configuration.GetSection("Stripe"));
+StripeConfiguration.ApiKey = builder.Configuration["Stripe:SecretKey"];
 
 var app = builder.Build();
 
@@ -28,7 +34,15 @@ app.MapControllerRoute(
     name: "default",
     pattern: "{controller=Home}/{action=Index}/{id?}");
 
-// --- Stripe Webhook Endpoint ---
+// Specific route for payment controller
+app.MapControllerRoute(
+    name: "payment",
+    pattern: "Payment/{action=Index}",
+    defaults: new { controller = "Payment" });
+
+app.Run();
+
+/* --- Stripe Webhook Endpoint ---
 app.MapPost("/api/stripe/webhook", async (HttpRequest request, IConfiguration config) =>
 {
     // Read the JSON payload from Stripe
@@ -66,7 +80,15 @@ app.MapPost("/api/stripe/webhook", async (HttpRequest request, IConfiguration co
         // Respond 400 Bad Request if verification fails
         return Results.BadRequest(e.Message);
     }
-});
+});*/
 
 // Run the app
 app.Run();
+
+// Stripe settings class
+public class StripeSettings
+{
+    public string SecretKey { get; set; } = string.Empty;
+    public string PublishableKey { get; set; } = string.Empty;
+    public string WebhookSecret { get; set; } = string.Empty;
+}

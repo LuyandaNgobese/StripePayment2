@@ -1,8 +1,103 @@
 ﻿@{
-    ViewData["Title"] = "Home Page";
+    ViewData["Title"] = "Cart";
 }
 
-<div class="text-center">
-    <h1 class="display-4">Welcome</h1>
-    <p>Learn about <a href="https://learn.microsoft.com/aspnet/core">building Web apps with ASP.NET Core</a>.</p>
+<h2>Your Cart</h2>
+<div id="cart">
+    <ul id="cart-items">
+        <li data-id="pizza" data-amount="8500" data-qty="1">
+            Pizza — R85.00 × 1
+            <button class="remove-item" data-id="pizza">Remove</button>
+        </li>
+        <li data-id="cola" data-amount="2000" data-qty="2">
+            Cola — R20.00 × 2
+            <button class="remove-item" data-id="cola">Remove</button>
+        </li>
+    </ul>
+
+    <div id="cart-total">
+        <strong>Total: R<span id="total-amount">125.00</span></strong>
+    </div>
+
+    <button id="checkout" class="btn btn-primary">Proceed to Checkout</button>
+    <div id="error-message" class="text-danger" style="display: none;"></div>
 </div>
+
+@section Scripts {
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            // Calculate total amount
+            function calculateTotal() {
+                let total = 0;
+                document.querySelectorAll('#cart-items li').forEach(li => {
+                    const amount = parseInt(li.dataset.amount);
+                    const qty = parseInt(li.dataset.qty);
+                    total += amount * qty;
+                });
+                document.getElementById('total-amount').textContent = (total / 100).toFixed(2);
+                return total;
+            }
+
+            // Remove item functionality
+            document.querySelectorAll('.remove-item').forEach(button => {
+                button.addEventListener('click', function() {
+                    const itemId = this.dataset.id;
+                    const li = this.closest('li');
+                    li.remove();
+                    calculateTotal();
+                });
+            });
+
+            // Checkout button handler
+            document.getElementById('checkout').addEventListener('click', async () => {
+                const checkoutBtn = document.getElementById('checkout');
+                const errorDiv = document.getElementById('error-message');
+                errorDiv.style.display = 'none';
+
+                const items = [];
+                document.querySelectorAll('#cart-items li').forEach(li => {
+                    items.push({
+                        productId: li.dataset.id,
+                        productName: li.textContent.split(' — ')[0].trim(),
+                        unitAmount: parseInt(li.dataset.amount),
+                        quantity: parseInt(li.dataset.qty)
+                    });
+                });
+
+                if (items.length === 0) {
+                    errorDiv.textContent = 'Your cart is empty';
+                    errorDiv.style.display = 'block';
+                    return;
+                }
+
+                checkoutBtn.disabled = true;
+                checkoutBtn.textContent = 'Processing...';
+
+                try {
+                    const res = await fetch('/api/payments/create-checkout-session', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ items })
+                    });
+
+                    const data = await res.json();
+
+                    if (res.ok && data.url) {
+                        // Redirect to Stripe Checkout
+                        window.location.href = data.url;
+                    } else {
+                        throw new Error(data.error || 'Failed to create checkout session');
+                    }
+                } catch (error) {
+                    errorDiv.textContent = error.message;
+                    errorDiv.style.display = 'block';
+                    checkoutBtn.disabled = false;
+                    checkoutBtn.textContent = 'Proceed to Checkout';
+                }
+            });
+
+            // Initial total calculation
+            calculateTotal();
+        });
+    </script>
+}
