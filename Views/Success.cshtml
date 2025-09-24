@@ -1,0 +1,22 @@
+﻿public class OrdersController : Controller
+{
+    private readonly IConfiguration _config;
+    public OrdersController(IConfiguration config)
+    {
+        _config = config;
+        StripeConfiguration.ApiKey = _config["Stripe:SecretKey"];
+    }
+
+    [HttpGet("orders/success")]
+    public async Task<IActionResult>
+    Success(string session_id)
+    {
+    var service = new SessionService();
+    var session = await service.GetAsync(session_id);
+
+    // session.PaymentStatus is usually "paid" when success
+    ViewData["Paid"] = session.PaymentStatus == "paid";
+    ViewData["Session"] = session;
+    return View();
+    }
+    }

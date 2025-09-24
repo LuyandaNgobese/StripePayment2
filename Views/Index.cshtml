@@ -1,0 +1,39 @@
+﻿@{
+    ViewData["Title"] = "Cart";
+}
+
+<h2>Your Cart</h2>
+<ul id="cart-items">
+    <li data-id="pizza" data-amount="8500" data-qty="1">Pizza — R85.00 × 1</li>
+    <li data-id="cola" data-amount="2000" data-qty="2">Cola — R20.00 × 2</li>
+</ul>
+
+<button id="checkout">Checkout</button>
+
+<script>
+    document.getElementById('checkout').addEventListener('click', async () => {
+        const items = [];
+        document.querySelectorAll('#cart-items li').forEach(li => {
+            items.push({
+                productId: li.dataset.id,
+                productName: li.textContent.split(' — ')[0].trim(),
+                unitAmount: parseInt(li.dataset.amount),
+                quantity: parseInt(li.dataset.qty)
+            });
+        });
+
+        const res = await fetch('/api/payments/create-checkout-session', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ items })
+        });
+
+        const data = await res.json();
+        if (data.url) {
+            // Simple redirect to the Stripe Checkout page
+            window.location = data.url;
+        } else {
+            alert('Failed to create session');
+        }
+    });
+</script>
